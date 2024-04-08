@@ -1,69 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { Gyroscope } from 'expo-sensors';
+import React from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 
-const { height, width } = Dimensions.get('window');
-
-const App = () => {
-  const [score, setScore] = useState(0);
-  const [gyroData, setGyroData] = useState({});
-
-  // Setup gyroscope sensor
-  useEffect(() => {
-    const subscription = Gyroscope.addListener(gyroscopeData => {
-      setGyroData(gyroscopeData);
-    });
-
-    return () => subscription.remove();
-  }, []);
-
-  // Handle user input (e.g., tapping on the screen or device rotation)
-  const handleLeft = () => {
-    // Implement player action (e.g., move left)
-  };
-
-  const handleRight = () => {
-    // Implement player action (e.g., move right)
-  };
-
-  const handleDeviceRotation = () => {
-    const { gamma } = gyroData;
-    if (gamma > 5) {
-      // Move right
-    } else if (gamma < -5) {
-      // Move left
-    }
-  };
-
-  // Game loop to update game state
-  useEffect(() => {
-    const gameLoop = setInterval(() => {
-      // Update game logic here
-      // For example, move character, spawn obstacles, check for collisions, etc.
-      // Update score
-      setScore(score => score + 1);
-    }, 1000); // Adjust the interval based on your game's requirements
-
-    return () => clearInterval(gameLoop);
-  }, []);
-
+const MainMenu = () => {
   return (
     <View style={styles.container}>
-      {/* Player Character */}
-      <View style={styles.player}></View>
-
-      {/* Buttons for left and right movement */}
+      <View style={styles.logoContainer}>
+        {/* Your logo image */}
+        <Image source={require('./images/logo.png')} style={styles.logo} />
+      </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleLeft}>
-          <Text>Left</Text>
+        {/* Play Button */}
+        <TouchableOpacity style={styles.playButton} onPress={() => console.log('Play button pressed')}>
+          <Text style={styles.buttonText}>PLAY</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleRight}>
-          <Text>Right</Text>
+        {/* Skins Button */}
+        <TouchableOpacity style={styles.skinsButton} onPress={() => console.log('Skins button pressed')}>
+          <Text style={styles.buttonText}>SKINS</Text>
+        </TouchableOpacity>
+        {/* Info Button */}
+        <TouchableOpacity style={styles.infoButton} onPress={() => console.log('Info button pressed')}>
+          <Text style={styles.buttonText}>INFO</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Score Display */}
-      <Text style={styles.score}>Score: {score}</Text>
     </View>
   );
 };
@@ -73,26 +31,60 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'black',
   },
-  player: {
-    width: 50,
-    height: 50,
-    backgroundColor: 'red', // Example color
-    marginBottom: 20,
+  logoContainer: {
+    flex: 1,
+    justifyContent: 'flex-end', // Align logo at the bottom of its container
+    alignItems: 'center',
+    marginTop: 30, // Adjust as needed to position the logo lower
+  },
+  logo: {
+    width: 300, // Adjust width as needed
+    height: 300, // Adjust height as needed
+    resizeMode: 'contain',
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 100, // Adjust as needed to position the button container lower
   },
-  button: {
-    padding: 10,
-    margin: 10,
-    backgroundColor: 'lightblue',
-    borderRadius: 5,
+  playButton: {
+    backgroundColor: '#0C9600',
+    width: 165,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
-  score: {
-    fontSize: 20,
+  skinsButton: {
+    backgroundColor: '#A00000',
+    width: 165,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  infoButton: {
+    backgroundColor: '#2059EC',
+    width: 165,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: 'bold',
   },
 });
 
-export default App;
+export default MainMenu;
