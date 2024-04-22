@@ -7,13 +7,15 @@ import Game from './Game';
 import Skins from './Skins';
 import Login from './Login';
 import Register from './Register';
-import Register from './Info';
+import Info from './Info';
+
+const Stack = createStackNavigator();
 
 const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="LandingPage"
+        initialRouteName="MainMenu"
         screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LandingPage" component={LandingPage} />
         <Stack.Screen name="MainMenu" component={MainMenu} />
