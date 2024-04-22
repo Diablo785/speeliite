@@ -44,6 +44,7 @@ const Game = () => {
   const handleResumePress = () => {
     setIsPaused(false);
     setIsCountdownPaused(false);
+    startCountdownAnimations(); // Start the countdown animations again
   };
 
   const handleRestartPress = () => {
@@ -138,7 +139,7 @@ const Game = () => {
           <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
         </TouchableOpacity>
       </View>
-      {countdown > 0 && (
+      {!isPaused && (
         <View style={styles.countdownContainer}>
           {countdownAnimations.map((anim, index) => (
             <Animated.Text
