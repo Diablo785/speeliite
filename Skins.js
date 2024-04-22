@@ -2,43 +2,45 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import Sidebar from './sidebar';
 
 const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }) => {
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isVisible}
-        onRequestClose={onClose}
-      >
-        <View style={styles.popupContainer}>
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.popupContainer}>
         <View style={[styles.popup, { backgroundColor: `${backgroundColor}`, borderRadius: 20,}]}>
-            <Text style={styles.popupText}>Do you want to buy {skin} skin for {price}?</Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={[styles.popupButton, styles.yesButton]} onPress={onBuy}>
-                <Text style={styles.buttonText}>YES</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.popupButton, styles.noButton]} onPress={onClose}>
-                <Text style={styles.buttonText}>NO</Text>
-              </TouchableOpacity>
-            </View>
+          <Text style={styles.popupText}>Do you want to buy {skin} skin for {price}?</Text>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={[styles.popupButton, styles.yesButton]} onPress={onBuy}>
+              <Text style={styles.buttonText}>YES</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.popupButton, styles.noButton]} onPress={onClose}>
+              <Text style={styles.buttonText}>NO</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    );
+      </View>
+    </Modal>
+  );
+};
+
+const SkinsPage = () => {
+  const navigation = useNavigation();
+  const [selectedSkin, setSelectedSkin] = useState(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [popupColor, setPopupColor] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleSkinPress = (skin, price, color) => {
+    setSelectedSkin({ skin, price });
+    setIsPopupVisible(true);
+    setPopupColor(color);
   };
-  
-  const SkinsPage = () => {
-    const navigation = useNavigation();
-    const [selectedSkin, setSelectedSkin] = useState(null);
-    const [isPopupVisible, setIsPopupVisible] = useState(false);
-    const [popupColor, setPopupColor] = useState(null);
-  
-    const handleSkinPress = (skin, price, color) => {
-      setSelectedSkin({ skin, price });
-      setIsPopupVisible(true);
-      setPopupColor(color);
-    };
 
   const handleBuySkin = () => {
     console.log('Skin bought!');
@@ -65,6 +67,10 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
         onClose={handleClosePopup}
         onBuy={handleBuySkin}
         backgroundColor={popupColor}
+      />
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
       <View style={styles.blueBox}>
         <Text style={styles.blueBoxText}>$ 100</Text>
@@ -107,7 +113,7 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
           ))}
         </View>
       </View>
-      <TouchableOpacity onPress={() => {}} style={styles.burgerIcon}>
+      <TouchableOpacity onPress={() => setSidebarOpen(!sidebarOpen)} style={styles.burgerIcon}>
         <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.greenButton} onPress={() => navigation.navigate('Game')}>
@@ -177,7 +183,7 @@ const styles = StyleSheet.create({
   burgerIcon: {
     position: 'absolute',
     top: 30,
-    left: 30,
+    left: 20,
   },
   burgerMenuIcon: {
     width: 40,

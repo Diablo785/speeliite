@@ -1,38 +1,45 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Sidebar from './sidebar';
 
 const MainMenu = () => {
   const navigation = useNavigation();
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Set initial state to false
   const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
-  const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(logoSlideInAnimation, {
-        toValue: 30,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonsSlideInAnimation, {
-        toValue: 100,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // No need to open the sidebar when component mounts, set it to false instead
+    setSidebarOpen(false);
   }, []);
+
+  useEffect(() => {
+    Animated.timing(logoSlideInAnimation, {
+      toValue: 30,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={toggleSidebar} style={styles.burgerIcon}>
+        <Image 
+          source={require('./images/burger_menu.png')} 
+          style={styles.burgerMenuIcon} 
+        />
+      </TouchableOpacity>
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <Animated.View style={[styles.logoContainer, { transform: [{ translateY: logoSlideInAnimation }] }]}>
         <Image source={require('./images/logo.png')} style={styles.logo} />
-        <TouchableOpacity onPress={() => {}} style={styles.burgerIcon}>
-        <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
-      </TouchableOpacity>
       </Animated.View>
-      <Animated.View style={[styles.buttonContainer, { transform: [{ translateY: buttonsSlideInAnimation }] }]}>
+      <Animated.View style={[styles.buttonContainer]}>
         <ShadowWrapper>
-          <TouchableOpacity style={styles.playButton} onPress={() => navigation.navigate('Game')}>
+          <TouchableOpacity style={styles.playButton} onPress={() => navigation.navigate('Play')}>
             <Text style={styles.buttonText}>PLAY</Text>
           </TouchableOpacity>
         </ShadowWrapper>
@@ -69,6 +76,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'black',
+    position: 'relative',
   },
   logoContainer: {
     justifyContent: 'center',
@@ -83,19 +91,22 @@ const styles = StyleSheet.create({
   },
   burgerIcon: {
     position: 'absolute',
-    top: 0,
-    left: 0,
+    top: 30,
+    left: 20,
+    zIndex: 1,
   },
   burgerMenuIcon: {
     width: 40,
     height: 40,
     resizeMode: 'contain',
+    tintColor: 'white', // Change to white for better visibility
   },
   buttonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
     bottom: 150,
+    zIndex: 2,
   },
   playButton: {
     backgroundColor: '#0C9600',
