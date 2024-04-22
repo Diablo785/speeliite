@@ -1,74 +1,30 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import MainMenu from './MainMenu';
+import LandingPage from './LandingPage';
+import Game from './Game';
+import Skins from './Skins';
+import Login from './Login';
+import Register from './Register';
+import Register from './Info';
 
-// Importē attēlus no vietējā projekta mapes
-import logo from './images/logo.png';
-import ceo from './images/ceo.png';
-import junior from './images/junior.png';
-import senior from './images/senior.png';
-
-const TeamMember = ({ image, title, name }) => (
-  <View style={styles.member}>
-    <Image source={image} style={styles.image} />
-    <Text style={styles.title}>{title}</Text>
-    <Text style={styles.name}>{name}</Text>
-  </View>
-);
-
-const App = () => (
-  <View style={styles.container}>
-    <Image source={logo} style={styles.logo} />
-    <Text style={styles.text}>OUR TEAM</Text>
-    <View style={styles.team}>
-      <TeamMember image={ceo} title="FOUNDER AKA CEO OF VALTERS CO" name="VALTERS" />
-      <TeamMember image={senior} title="SENIOR DEVELOPER PROGAMERS AKA" name="IMKA" />
-      <TeamMember image={junior} title="JUNIOR DEVELOPER" name="OLEGS" />
-    </View>
-  </View>
-);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-    alignItems: 'center',
-    justifyContent: 'flex-start', // Maina izkārtojumu, lai sāktu no augšas
-    paddingTop: 50, // Pievieno atstarpi virs konteinera
-  },
-  logo: {
-    width: 300,
-    height: 300,
-    marginBottom: 10, // Samazina atstarpes apakšu zem logotipa
-    marginTop: 60,
-  },
-  text: {
-    color: 'white',
-    fontSize: 30,
-    fontWeight: 'bold',
-    marginBottom: 50, // Samazina atstarpes augšu virs teksta
-  },
-  team: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  member: {
-    alignItems: 'center',
-  },
-  image: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
-  },
-  title: {
-    color: 'white',
-    fontSize: 5, // Samazina nosaukuma fonta izmēru
-    marginTop: 10, // Pievieno atstarpi virs nosaukuma
-  },
-  name: {
-    color: 'white',
-    fontSize: 10, // Samazina vārda fonta izmēru
-  },
-});
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="LandingPage"
+        screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LandingPage" component={LandingPage} />
+        <Stack.Screen name="MainMenu" component={MainMenu} />
+        <Stack.Screen name="Game" component={Game} />
+        <Stack.Screen name="Skins" component={Skins} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="Info" component={Info} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 export default App;
