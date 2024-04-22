@@ -8,6 +8,8 @@ import Game from './Game';
 import Skins from './Skins';
 import Login from './Login';
 import Register from './Register';
+import Register from './Info';
+
 
 const Stack = createStackNavigator();
 
@@ -23,6 +25,7 @@ const App = () => {
         <Stack.Screen name="Skins" component={Skins} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="Info" component={Info} />
       </Stack.Navigator>
     </NavigationContainer>
   );
