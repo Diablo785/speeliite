@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
-// Importē attēlus no vietējā projekta mapes
+
 import logo from './images/logo.png';
 import ceo from './images/ceo.png';
 import junior from './images/junior.png';
