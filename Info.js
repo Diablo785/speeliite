@@ -15,7 +15,7 @@ const TeamMember = ({ image, title, name }) => (
   </View>
 );
 
-const Info = () => (
+const App = () => (
   <View style={styles.container}>
     <Image source={logo} style={styles.logo} />
     <Text style={styles.text}>OUR TEAM</Text>
@@ -32,20 +32,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
     alignItems: 'center',
-    justifyContent: 'flex-start', // Maina izkārtojumu, lai sāktu no augšas
-    paddingTop: 50, // Pievieno atstarpi virs konteinera
+    justifyContent: 'flex-start', 
+    paddingTop: 50, 
   },
   logo: {
     width: 300,
     height: 300,
-    marginBottom: 10, // Samazina atstarpes apakšu zem logotipa
+    marginBottom: 10, 
     marginTop: 60,
   },
   text: {
     color: 'white',
     fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 50, // Samazina atstarpes augšu virs teksta
+    marginBottom: 50, 
   },
   team: {
     flexDirection: 'row',
@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
   },
   member: {
     alignItems: 'center',
+    margin: 10, 
   },
   image: {
     width: 100,
@@ -62,13 +63,13 @@ const styles = StyleSheet.create({
   },
   title: {
     color: 'white',
-    fontSize: 5, // Samazina nosaukuma fonta izmēru
-    marginTop: 10, // Pievieno atstarpi virs nosaukuma
+    fontSize: 6, 
+    marginTop: 10, 
   },
   name: {
     color: 'white',
-    fontSize: 10, // Samazina vārda fonta izmēru
+    fontSize: 10, 
   },
 });
 
-export default Info;
+export default App;
