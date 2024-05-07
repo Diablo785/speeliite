@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import Sidebar from './SideBar';
 
 const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }) => {
     return (
@@ -33,6 +34,44 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
     const [selectedSkin, setSelectedSkin] = useState(null);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [popupColor, setPopupColor] = useState(null);
+    const [userData, setUserData] = useState(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+    useEffect(() => {
+      setSidebarOpen(false);
+      getUserDataFromStorage();
+    }, []);
+  
+    const toggleSidebar = () => {
+      setSidebarOpen(!sidebarOpen);
+    };
+  
+    const getUserDataFromStorage = async () => {
+      try {
+        const storedUserData = await AsyncStorage.getItem('userData');
+        if (storedUserData) {
+          const parsedUserData = JSON.parse(storedUserData);
+          setUserData(parsedUserData);
+        }
+      } catch (error) {
+        console.error('Error getting user data from AsyncStorage:', error);
+      }
+    };
+  
+    useEffect(() => {
+      Animated.parallel([
+        Animated.timing(logoSlideInAnimation, {
+          toValue: 30,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonsSlideInAnimation, {
+          toValue: 100,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, []);
   
     const handleSkinPress = (skin, price, color) => {
       setSelectedSkin({ skin, price });
@@ -107,9 +146,10 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
           ))}
         </View>
       </View>
-      <TouchableOpacity onPress={() => {}} style={styles.burgerIcon}>
+      <TouchableOpacity onPress={toggleSidebar} style={styles.burgerIcon}>
         <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
       </TouchableOpacity>
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <TouchableOpacity style={styles.greenButton} onPress={() => navigation.navigate('Game')}>
         <Text style={styles.buttonText}>PLAY</Text>
       </TouchableOpacity>

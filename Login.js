@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const Login = () => {
     const navigation = useNavigation();
@@ -25,41 +27,41 @@ const Login = () => {
         ]).start();
     }, []);
 
-    const handleLogin = () => {
-        // Define the URL of your PHP login endpoint
-        const url = 'http://localhost/speeliite/login.php';
-    
-        // Define the request body
-        const body = JSON.stringify({
-            username: username,
-            password: password,
-        });
-    
-        // Define the request options
-        const requestOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: body,
-        };
-    
-        // Make the fetch request
-        fetch(url, requestOptions)
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    // Navigate to the Home screen upon successful login
-                    navigation.navigate('MainMenu');
-                } else {
-                    // Set error message if login fails
-                    setError(data.message);
-                    console.error('regnars gejs');
-                }
-            })
-            .catch((error) => {
-                console.error('Error logging in:', error);
+    const url = 'http://192.168.114.184/speeliite/login.php';
+
+    const handleLogin = async () => {
+        setError('');
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                }),
             });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            console.log('Response:', data);
+            if (data.success) {
+                console.log('Login successful');
+                if (data.userData) {
+                    console.log('User data:', data.userData);
+                    await AsyncStorage.setItem('userData', JSON.stringify(data.userData));
+                }
+                navigation.navigate('MainMenu');
+                console.log('Navigated to MainMenu');
+            } else {
+                setError(data.message);
+            }
+        } catch (error) {
+            console.error('Error logging in:', error);
+            setError('An error occurred. Please try again.');
+        }
     };
     
 
@@ -97,10 +99,10 @@ const Login = () => {
                     value={password}
                     placeholderTextColor="#0C9600"
                 />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
                 <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                     <Text style={styles.buttonText}>LOGIN</Text>
                 </TouchableOpacity>
-                {error ? <Text style={styles.error}>{error}</Text> : null}
             </Animated.View>
         </View>
     );
@@ -189,9 +191,9 @@ const styles = StyleSheet.create({
     },
     error: {
         color: 'red',
-        marginTop: 10,
+        marginBottom: 5,
+        fontSize: 18,
     },
 });
 
 export default Login;
-

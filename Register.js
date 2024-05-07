@@ -1,9 +1,15 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Register = () => {
   const navigation = useNavigation();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  
   const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
   const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
 
@@ -21,6 +27,83 @@ const Register = () => {
       }),
     ]).start();
   }, []);
+
+  const handleRegistration = async () => {
+    if (!username || !password || !email) {
+      setError('Please fill in all fields');
+      return;
+    }
+  
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+  
+    if (username.length < 6 || username.length > 14) {
+      setError('Username must be between 6 and 14 characters long');
+      return;
+    }
+  
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+  
+    const registerUrl = 'http://192.168.114.184/speeliite/register.php';
+  
+    console.log('Registering user with username:', username);
+    console.log('Registering user with password:', password);
+    console.log('Registering user with email:', email);
+    
+    const registerOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+        email: email,
+      }),
+    };
+  
+    try {
+      const registerResponse = await fetch(registerUrl, registerOptions);
+      const registerData = await registerResponse.json();
+    
+      if (registerData.success) {
+        const loginUrl = 'http://192.168.114.184/speeliite/login.php';
+        const loginOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: username,
+            password: password,
+          }),
+        };
+    
+        const loginResponse = await fetch(loginUrl, loginOptions);
+        const loginData = await loginResponse.json();
+    
+        if (loginData.success) {
+          await AsyncStorage.setItem('userData', JSON.stringify(loginData.userData));
+
+          navigation.navigate('MainMenu', { userData: loginData.userData });
+        } else {
+          setError('Login failed');
+        }
+      } else {
+        setError(registerData.message);
+      }
+    } catch (error) {
+      console.error('Error registering:', error);
+      setError('An error occurred. Please try again.');
+    }
+  };
+  
 
   const navigateToLogin = () => {
     navigation.navigate('Login');
@@ -44,20 +127,24 @@ const Register = () => {
         <TextInput
           style={styles.input}
           placeholder="Username"
-          placeholderTextColor="#2059EC" // Set placeholder text color here
+          placeholderTextColor="#2059EC"
+          onChangeText={setUsername}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
           secureTextEntry={true}
-          placeholderTextColor="#2059EC" // Set placeholder text color here
+          placeholderTextColor="#2059EC"
+          onChangeText={setPassword}
         />
         <TextInput
           style={styles.input}
-          placeholder="Email" // Added email input field
-          placeholderTextColor="#2059EC" // Set placeholder text color here
+          placeholder="Email"
+          placeholderTextColor="#2059EC"
+          onChangeText={setEmail}
         />
-        <TouchableOpacity style={styles.registerButton}>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <TouchableOpacity style={styles.registerButton} onPress={handleRegistration}>
           <Text style={styles.buttonText}>REGISTER</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -121,7 +208,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     width: 200,
     height: 50,
-    marginBottom: 20,
+    marginBottom: 14,
     paddingLeft: 10,
     borderRadius: 10,
     borderWidth: 2,
@@ -145,6 +232,11 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 36,
     fontWeight: 'bold',
+  },
+  error: {
+    color: 'red',
+    fontSize: 18,
+    marginBottom: 5,
   },
 });
 

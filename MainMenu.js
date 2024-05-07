@@ -1,11 +1,44 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Sidebar from './SideBar';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 const MainMenu = () => {
   const navigation = useNavigation();
   const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
   const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
+  const [userData, setUserData] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+    getUserDataFromStorage();
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(logoSlideInAnimation, {
+      toValue: 30,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const getUserDataFromStorage = async () => {
+    try {
+      const storedUserData = await AsyncStorage.getItem('userData');
+      if (storedUserData) {
+        const parsedUserData = JSON.parse(storedUserData);
+        setUserData(parsedUserData);
+      }
+    } catch (error) {
+      console.error('Error getting user data from AsyncStorage:', error);
+    }
+  };
 
   useEffect(() => {
     Animated.parallel([
@@ -26,10 +59,21 @@ const MainMenu = () => {
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, { transform: [{ translateY: logoSlideInAnimation }] }]}>
         <Image source={require('./images/logo.png')} style={styles.logo} />
-        <TouchableOpacity onPress={() => {}} style={styles.burgerIcon}>
-        <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={toggleSidebar} style={styles.burgerIcon}>
+          <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
+        </TouchableOpacity>
+        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       </Animated.View>
+
+      <View style={styles.userDataContainer}>
+        {userData && (
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome,</Text>
+            <Text style={styles.usernameText}>{userData.username}!</Text>
+          </View>
+        )}
+      </View>
+
       <Animated.View style={[styles.buttonContainer, { transform: [{ translateY: buttonsSlideInAnimation }] }]}>
         <ShadowWrapper>
           <TouchableOpacity style={styles.playButton} onPress={() => navigation.navigate('Game')}>
@@ -75,6 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
     top: 10,
+    zIndex: 1,
   },
   logo: {
     width: 300,
@@ -83,6 +128,7 @@ const styles = StyleSheet.create({
   },
   burgerIcon: {
     position: 'absolute',
+    zIndex: 5,
     top: 0,
     left: 0,
   },
@@ -142,6 +188,27 @@ const styles = StyleSheet.create({
     },
     elevation: 5,
     borderRadius: 10,
+  },
+  welcomeText: {
+    color: 'white',
+    fontSize: 28,
+    textAlign: 'center',
+  },
+  usernameText: {
+    color: 'white',
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  userDataContainer: {
+    top: 15,
+    width: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeContainer: {
+    alignItems: 'center',
   },
 });
 
