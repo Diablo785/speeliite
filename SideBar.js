@@ -10,7 +10,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
   useEffect(() => {
     Animated.timing(sidebarSlideInAnimation, {
-      toValue: sidebarOpen ? 30 : -280,
+      toValue: sidebarOpen ? 0 : -375,
       duration: 400,
       useNativeDriver: true,
     }).start();
@@ -36,7 +36,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     try {
       await AsyncStorage.removeItem('userData');
       setUserData(null);
-      // Navigate to the Login screen
       navigation.navigate('LandingPage');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -44,41 +43,46 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   return (
-    <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarSlideInAnimation }] }]}>
-      <View style={styles.userDataContainer}>
-        {userData && (
-          <Text style={styles.usernameText}>Welcome, {userData.username}!</Text>
-        )}
-      </View>
-  
-      <View style={styles.sidebarButtonsContainer}>
-        <TouchableOpacity style={styles.sidebarButton} onPress={() => navigation.navigate('GA')}>
-          <Text style={styles.buttonText}>Play</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarButton} onPress={() => navigation.navigate('Skins')}>
-          <Text style={styles.buttonText}>Skins</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarButton} onPress={() => navigation.navigate('Info')}>
-          <Text style={styles.buttonText}>Info</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarButton} onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.buttonText}>Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarButton} onPress={handleSignOut}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </TouchableOpacity>
+    <Animated.View style={[styles.sidebarContainer, { transform: [{ translateX: sidebarSlideInAnimation }] }]}>
+      <View style={styles.sidebar}>
+        <View style={styles.userDataContainer}>
+          {userData && (
+            <Text style={styles.usernameText}>Welcome, {userData.username}!</Text>
+          )}
+        </View>
+    
+        <View style={styles.sidebarButtonsContainer}>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#0C9600' }]} onPress={() => navigation.navigate('Game')}>
+            <Text style={styles.buttonText}>Play</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#A00000' }]} onPress={() => navigation.navigate('Skins')}>
+            <Text style={styles.buttonText}>Skins</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#2059EC' }]} onPress={() => navigation.navigate('Info')}>
+            <Text style={styles.buttonText}>Info</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#E1CD1D' }]} onPress={() => navigation.navigate('Settings')}>
+            <Text style={styles.buttonText}>Settings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#FFFFFF' }]} onPress={handleSignOut}>
+            <Text style={[styles.buttonText, { color: '#000000' }]}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  sidebar: {
+  sidebarContainer: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignContent: 'center',
     position: 'absolute',
-    top: '40%',
+    zIndex: 3,
+  },
+  sidebar: {
     height: 500,
-    bottom: 0,
-    left: 0,
     width: 250,
     backgroundColor: 'rgba(20, 20, 20, 0.85)',
     borderWidth: 1,
@@ -92,7 +96,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sidebarButton: {
-    backgroundColor: '#2059EC',
     width: 165,
     height: 60,
     justifyContent: 'center',

@@ -1,19 +1,72 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
-const MOVE_INCREMENT = 6;
+const MOVE_INCREMENT = 5;
 const COUNTDOWN_DURATION = 3;
 
+const FPSCounter = ({ fps }) => {
+  return (
+    <View style={styles.fpsCounter}>
+      <Text style={styles.fpsText}>{`${fps}`}</Text>
+    </View>
+  );
+};
+
 const Game = () => {
+  const [fps, setFps] = useState(0);
   const [score, setScore] = useState(0);
   const [playerPosition, setPlayerPosition] = useState(width / 2 - 25);
   const [currentDirection, setCurrentDirection] = useState(null);
   const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
   const [isPaused, setIsPaused] = useState(false);
   const [isCountdownPaused, setIsCountdownPaused] = useState(false);
+  const [isGameInProgress, setIsGameInProgress] = useState(false);
   const moveIntervalRef = useRef(null);
   const countdownAnimations = useRef(Array.from({ length: COUNTDOWN_DURATION }, () => new Animated.Value(0))).current;
+  const navigation = useNavigation();
+
+  const [obstacles, setObstacles] = useState([]);
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      const now = performance.now();
+      let lastTime = now;
+      let frames = 0;
+
+      const loop = () => {
+        frames++;
+        const currentTime = performance.now();
+        if (currentTime - lastTime >= 1000) {
+          setFps(frames);
+          frames = 0;
+          lastTime = currentTime;
+        }
+        requestAnimationFrame(loop);
+      };
+
+      loop();
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    if (isGameInProgress && countdown === 0) {
+      const obstacleInterval = setInterval(() => {
+        const numObstaclesToSpawn = Math.ceil(Math.random() * 4); // Randomly spawn up to 4 obstacles
+        const newObstacles = [];
+        for (let i = 0; i < numObstaclesToSpawn; i++) {
+          const newPosition = Math.random() * (width - 50); // Random position within the screen width
+          newObstacles.push(newPosition);
+        }
+        setObstacles(prevObstacles => [...prevObstacles, ...newObstacles]);
+      }, 2000);
+  
+      return () => clearInterval(obstacleInterval);
+    }
+  }, [isGameInProgress, countdown]);
 
   const moveLeft = () => {
     setPlayerPosition(position => Math.max(0, position - MOVE_INCREMENT));
@@ -32,6 +85,10 @@ const Game = () => {
     }
   };
 
+  const handleMainmenuPress = () => {
+    navigation.navigate('MainMenu');
+  };
+
   const handleRelease = () => {
     setCurrentDirection(null);
   };
@@ -47,15 +104,18 @@ const Game = () => {
     startCountdownAnimations(); // Start the countdown animations again
   };
 
-  const handleRestartPress = () => {
-    setScore(0);
-    setCountdown(COUNTDOWN_DURATION);
-    clearInterval(moveIntervalRef.current);
-    setIsPaused(false);
-    setIsCountdownPaused(false);
-    countdownAnimations.forEach(anim => anim.setValue(0));
-    startCountdownAnimations();
-  };
+const handleRestartPress = () => {
+  setScore(0);
+  setCountdown(COUNTDOWN_DURATION);
+  clearInterval(moveIntervalRef.current);
+  setIsPaused(false);
+  setIsCountdownPaused(false);
+  setIsGameInProgress(false);
+  setPlayerPosition(width / 2 - 25); // Reset player's position to the center
+  setObstacles([]);
+  countdownAnimations.forEach(anim => anim.setValue(0));
+  startCountdownAnimations();
+};
 
   const startCountdownAnimations = () => {
     countdownAnimations.forEach((anim, index) => {
@@ -74,6 +134,7 @@ const Game = () => {
         if (countdown > 0) {
           setCountdown(prevCountdown => prevCountdown - 1);
         } else {
+          setIsGameInProgress(true);
           setScore(prevScore => prevScore + 1);
         }
       }
@@ -104,6 +165,7 @@ const Game = () => {
 
   return (
     <View style={styles.container}>
+      <FPSCounter fps={fps} />
       <TouchableOpacity onPress={handlePausePress} style={styles.pauseIcon}>
         <Image source={require('./images/pause_icon.png')} style={styles.pauseIconImage} />
       </TouchableOpacity>
@@ -119,7 +181,7 @@ const Game = () => {
           <TouchableOpacity onPress={() => console.log("Settings")} style={styles.menuItem}>
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => console.log("Main Menu")} style={styles.menuItem}>
+          <TouchableOpacity onPress={handleMainmenuPress} style={styles.menuItem}>
             <Text style={styles.menuText}>Main Menu</Text>
           </TouchableOpacity>
         </View>
@@ -159,9 +221,43 @@ const Game = () => {
       {countdown === 0 && (
         <Text style={styles.score}>{score}</Text>
       )}
+      {obstacles.map((position, index) => (
+        <Obstacle key={index} position={position} setObstacles={setObstacles} />
+      ))}
     </View>
   );
 };
+
+const Obstacle = ({ position, setObstacles }) => {
+  const obstacleAnimation = useRef(new Animated.Value(-450)).current; // Start the obstacle animation from the top
+
+  useEffect(() => {
+    const animation = Animated.timing(obstacleAnimation, {
+      toValue: height + 300, // Move the obstacle beyond the bottom of the screen
+      duration: 4000,
+      useNativeDriver: true,
+    });
+
+    animation.start(() => {
+      // Remove the obstacle from state when animation completes
+      setObstacles(prevObstacles => prevObstacles.filter(pos => pos !== position));
+    });
+
+    return () => {
+      animation.stop();
+    };
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.obstacle,
+        { transform: [{ translateY: obstacleAnimation }], left: position },
+      ]}
+    ></Animated.View>
+  );
+};
+
 
 const styles = StyleSheet.create({
   container: {
@@ -169,6 +265,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'black',
+  },
+  fpsCounter: {
+    position: 'absolute',
+    top: 35,
+    right: 25,
+    zIndex: 10,
+  },
+  fpsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'green',
   },
   player: {
     position: 'absolute',
@@ -183,6 +290,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-around',
+    zIndex: 10,
   },
   arrowImage: {
     width: 65,
@@ -194,6 +302,7 @@ const styles = StyleSheet.create({
     color: 'white',
     position: 'absolute',
     top: 35,
+    zIndex: 10,
   },
   countdownContainer: {
     flexDirection: 'row',
@@ -205,12 +314,13 @@ const styles = StyleSheet.create({
     fontSize: 72,
     fontWeight: 'bold',
     color: 'white',
-    zIndex: 11,
+    zIndex: 10,
   },
   pauseIcon: {
     position: 'absolute',
     top: 35,
     left: 25,
+    zIndex: 10,
   },
   pauseIconImage: {
     width: 50,
@@ -249,6 +359,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 20,
+  },
+  obstacle: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    backgroundColor: 'blue',
   },
 });
 

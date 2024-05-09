@@ -62,18 +62,12 @@ const MainMenu = () => {
         <TouchableOpacity onPress={toggleSidebar} style={styles.burgerIcon}>
           <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
         </TouchableOpacity>
-        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       </Animated.View>
-
-      <View style={styles.userDataContainer}>
-        {userData && (
-          <View style={styles.welcomeContainer}>
-            <Text style={styles.welcomeText}>Welcome,</Text>
-            <Text style={styles.usernameText}>{userData.username}!</Text>
-          </View>
-        )}
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <View style={styles.welcomeContainer}>
+        <Text style={styles.welcomeText}>Welcome,</Text>
+<Text style={styles.usernameText}>{userData ? userData.username : 'User'}!</Text>
       </View>
-
       <Animated.View style={[styles.buttonContainer, { transform: [{ translateY: buttonsSlideInAnimation }] }]}>
         <ShadowWrapper>
           <TouchableOpacity style={styles.playButton} onPress={() => navigation.navigate('Game')}>
