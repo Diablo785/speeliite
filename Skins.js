@@ -1,86 +1,180 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Sidebar from './SideBar';
 
 const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }) => {
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isVisible}
-        onRequestClose={onClose}
-      >
-        <View style={styles.popupContainer}>
-        <View style={[styles.popup, { backgroundColor: `${backgroundColor}`, borderRadius: 20,}]}>
-            <Text style={styles.popupText}>Do you want to buy {skin} skin for {price}?</Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={[styles.popupButton, styles.yesButton]} onPress={onBuy}>
-                <Text style={styles.buttonText}>YES</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.popupButton, styles.noButton]} onPress={onClose}>
-                <Text style={styles.buttonText}>NO</Text>
-              </TouchableOpacity>
-            </View>
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.popupContainer}>
+        <View style={[styles.popup, { backgroundColor: `${backgroundColor}` }]}>
+          <Text style={styles.popupText}>Do you want to buy {skin} skin for {price}?</Text>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={[styles.popupButton, styles.yesButton]} onPress={onBuy}>
+              <Text style={styles.buttonText}>YES</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.popupButton, styles.noButton]} onPress={onClose}>
+              <Text style={styles.buttonText}>NO</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    );
-  };
+      </View>
+    </Modal>
+  );
+};
+
+const SkinsPage = () => {
+  const navigation = useNavigation();
+  const [selectedSkin, setSelectedSkin] = useState(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [popupColor, setPopupColor] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userCredits, setUserCredits] = useState(0);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const userId = JSON.parse(userData).id;
+          const response = await fetch(`http://192.168.114.184/speeliite/get_user_credits.php`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: userId,
+            }),
+          });
   
-  const SkinsPage = () => {
-    const navigation = useNavigation();
-    const [selectedSkin, setSelectedSkin] = useState(null);
-    const [isPopupVisible, setIsPopupVisible] = useState(false);
-    const [popupColor, setPopupColor] = useState(null);
-    const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
-    const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
   
-    useEffect(() => {
-      setSidebarOpen(false);
-    }, []);
-  
-    const toggleSidebar = () => {
-      setSidebarOpen(!sidebarOpen);
+          const data = await response.json();
+          setUserCredits(data.credits);
+        } else {
+          throw new Error('User data not found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+      }
     };
   
-    useEffect(() => {
-      Animated.parallel([
-        Animated.timing(logoSlideInAnimation, {
-          toValue: 30,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(buttonsSlideInAnimation, {
-          toValue: 100,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, []);
+    fetchUserId();
+  }, []);
   
-    const handleSkinPress = (skin, price, color) => {
-      setSelectedSkin({ skin, price });
-      setIsPopupVisible(true);
-      setPopupColor(color);
-    };
-
-  const handleBuySkin = () => {
-    console.log('Skin bought!');
-    setIsPopupVisible(false);
+  const skinPrices = {
+    Cat: 100,
+    Dog: 100,
+    Apple: 100,
+    Globe: 200,
+    Toad: 200,
+    Pickle: 200,
+    Rat: 500,
+    Pig: 500,
+    Bacha: 500,
+    Junko: 1000,
+    Tike: 1000,
+    Xinjo: 1000,
   };
 
+  const handleSkinPress = async (skin, color, price) => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (!userData) {
+        throw new Error('User data not found in AsyncStorage');
+      }
+      const { id } = JSON.parse(userData);
+
+      const response = await fetch('http://192.168.114.184/speeliite/check_skin.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: id,
+          skinName: skin,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+      if (result.owned) {
+        alert('You already own this skin!');
+      } else if (userCredits < price) {
+        alert('Insufficient funds');
+      } else {
+        setSelectedSkin({ skin, price });
+        setIsPopupVisible(true);
+        setPopupColor(color);
+      }
+    } catch (error) {
+      console.error('Error checking skin ownership:', error);
+    }
+  };
+
+  const handleBuySkin = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (!userData) {
+        throw new Error('User data not found in AsyncStorage');
+      }
+      const { id, credits } = JSON.parse(userData);
+  
+      if (credits < selectedSkin.price) {
+        throw new Error('Insufficient credits');
+      }
+  
+      const response = await fetch('http://192.168.114.184/speeliite/buy_skin.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: id,
+          skinName: selectedSkin.skin,
+          price: selectedSkin.price,
+          deductedCredits: selectedSkin.price,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const result = await response.json();
+      console.log(result);
+      if (result.success) {
+        setIsPopupVisible(false);
+        await AsyncStorage.setItem('userData', JSON.stringify({ id, credits: result.credits }));
+        setUserCredits(result.credits);
+      } else {
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
   const handleClosePopup = () => {
     setIsPopupVisible(false);
   };
 
   const rows = [
-    { color: '#0C9600', texts: ['Cat', 'Dog', 'Apple'], prices: ['$5', '$10', '$15'] },
-    { color: '#2059EC', texts: ['Globe', 'Toad', 'Pickle'], prices: ['$8', '$12', '$20'] },
-    { color: '#960075', texts: ['Rat', 'Pig', 'Bacha'], prices: ['$6', '$11', '$18'] },
-    { color: '#ECCB20', texts: ['Junko', 'Tike', 'Xinjo'], prices: ['$7', '$13', '$16'] },
+    { color: '#0C9600', texts: ['Cat', 'Dog', 'Apple'], images: [require('./images/cat.png'), require('./images/dog.png'), require('./images/apple.png')] },
+    { color: '#2059EC', texts: ['Globe', 'Toad', 'Pickle'], images: [require('./images/globe.png'), require('./images/toad.png'), require('./images/pickle.png')] },
+    { color: '#960075', texts: ['Rat', 'Pig', 'Bacha'], images: [require('./images/rat.png'), require('./images/pig.png'), require('./images/bacha.png')] },
+    { color: '#ECCB20', texts: ['Junko', 'Tike', 'Xinjo'], images: [require('./images/junko.png'), require('./images/tike.png'), require('./images/xinjo.png')] },
   ];
 
   return (
@@ -93,8 +187,12 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
         onBuy={handleBuySkin}
         backgroundColor={popupColor}
       />
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
       <View style={styles.blueBox}>
-        <Text style={styles.blueBoxText}>$ 100</Text>
+        <Text style={styles.blueBoxText}>$ {userCredits}</Text>
       </View>
       <View style={styles.contentContainer}>
         {rows.map((row, rowIndex) => (
@@ -104,13 +202,11 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
                 <TouchableOpacity
                   key={`${rowIndex}-text-${index}`}
                   style={styles.boxWithText}
-                  onPress={() => handleSkinPress(text, row.prices[index], row.color)}
+                  onPress={() => handleSkinPress(text, row.color, skinPrices[text])}
                 >
                   <View style={[styles.box, styles.boxWithMargin, { borderColor: row.color }]}>
-                    {row.color === 'white' && (
-                      <Text>
-                        <FontAwesome name="question" size={64} color="white" />
-                      </Text>
+                    {row.images && (
+                      <Image source={row.images[index]} style={{ width: 60, height: 60 }} />
                     )}
                   </View>
                   <Text style={styles.boxText}>{text}</Text>
@@ -134,17 +230,15 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
           ))}
         </View>
       </View>
-      <TouchableOpacity onPress={toggleSidebar} style={styles.burgerIcon}>
+      <TouchableOpacity onPress={() => setSidebarOpen(!sidebarOpen)} style={styles.burgerIcon}>
         <Image source={require('./images/burger_menu.png')} style={styles.burgerMenuIcon} />
       </TouchableOpacity>
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <TouchableOpacity style={styles.greenButton} onPress={() => navigation.navigate('Game')}>
         <Text style={styles.buttonText}>PLAY</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -52,13 +52,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </View>
     
         <View style={styles.sidebarButtonsContainer}>
-          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#0C9600' }]} onPress={() => navigation.navigate('Game')}>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#0C9600', width: 115 }]} onPress={() => navigation.navigate('Game')}>
             <Text style={styles.buttonText}>Play</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#A00000' }]} onPress={() => navigation.navigate('Skins')}>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#8300FF', width: 200 }]} onPress={() => navigation.navigate('MainMenu')}>
+            <Text style={styles.buttonText}>Main Menu</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#A00000', width: 125 }]} onPress={() => navigation.navigate('Skins')}>
             <Text style={styles.buttonText}>Skins</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#2059EC' }]} onPress={() => navigation.navigate('Info')}>
+          <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#2059EC', width: 100 }]} onPress={() => navigation.navigate('Info')}>
             <Text style={styles.buttonText}>Info</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.sidebarButton, { backgroundColor: '#E1CD1D' }]} onPress={() => navigation.navigate('Settings')}>
@@ -82,7 +85,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   sidebar: {
-    height: 500,
+    height: 550,
     width: 250,
     backgroundColor: 'rgba(20, 20, 20, 0.85)',
     borderWidth: 1,

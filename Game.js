@@ -23,11 +23,48 @@ const Game = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [isCountdownPaused, setIsCountdownPaused] = useState(false);
   const [isGameInProgress, setIsGameInProgress] = useState(false);
+  const [collisionMessage, setCollisionMessage] = useState('');
   const moveIntervalRef = useRef(null);
   const countdownAnimations = useRef(Array.from({ length: COUNTDOWN_DURATION }, () => new Animated.Value(0))).current;
   const navigation = useNavigation();
+  const hitboxSize = 50;
 
   const [obstacles, setObstacles] = useState([]);
+
+  const isIntersecting = (rect1, rect2) => {
+    return (
+      rect1.x < rect2.x + rect2.width &&
+      rect1.x + rect1.width > rect2.x &&
+      rect1.y < rect2.y + rect2.height &&
+      rect1.y + rect1.height > rect2.y
+    );
+  };
+
+  useEffect(() => {
+    obstacles.forEach((position, index) => {
+      const playerHitbox = {
+        x: playerPosition,
+        y: height - 175,
+        width: hitboxSize,
+        height: hitboxSize,
+      };
+  
+      const obstacleHitbox = {
+        x: position,
+        y: height - 50, // Adjust as needed
+        width: hitboxSize,
+        height: hitboxSize,
+      };
+  
+      if (isIntersecting(playerHitbox, obstacleHitbox)) {
+        console.log(`Player collided with obstacle at position ${position}`);
+        setIsGameInProgress(false);
+        clearInterval(moveIntervalRef.current);
+        setCollisionMessage('You collided with an obstacle!');
+        return;
+      }
+    });
+  }, [playerPosition, obstacles]);
 
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
@@ -104,18 +141,19 @@ const Game = () => {
     startCountdownAnimations(); // Start the countdown animations again
   };
 
-const handleRestartPress = () => {
-  setScore(0);
-  setCountdown(COUNTDOWN_DURATION);
-  clearInterval(moveIntervalRef.current);
-  setIsPaused(false);
-  setIsCountdownPaused(false);
-  setIsGameInProgress(false);
-  setPlayerPosition(width / 2 - 25); // Reset player's position to the center
-  setObstacles([]);
-  countdownAnimations.forEach(anim => anim.setValue(0));
-  startCountdownAnimations();
-};
+  const handleRestartPress = () => {
+    setScore(0);
+    setCountdown(COUNTDOWN_DURATION);
+    clearInterval(moveIntervalRef.current);
+    setIsPaused(false);
+    setIsCountdownPaused(false);
+    setIsGameInProgress(false);
+    setPlayerPosition(width / 2 - 25); // Reset player's position to the center
+    setObstacles([]);
+    setCollisionMessage('');
+    countdownAnimations.forEach(anim => anim.setValue(0));
+    startCountdownAnimations();
+  };
 
   const startCountdownAnimations = () => {
     countdownAnimations.forEach((anim, index) => {
@@ -220,6 +258,11 @@ const handleRestartPress = () => {
       )}
       {countdown === 0 && (
         <Text style={styles.score}>{score}</Text>
+      )}
+      {collisionMessage !== '' && (
+        <View style={styles.collisionMessage}>
+          <Text style={styles.collisionMessageText}>{collisionMessage}</Text>
+        </View>
       )}
       {obstacles.map((position, index) => (
         <Obstacle key={index} position={position} setObstacles={setObstacles} />
@@ -365,6 +408,19 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     backgroundColor: 'blue',
+  },
+  collisionMessage: {
+    position: 'absolute',
+    top: height / 2 - 50,
+    left: width / 2 - 150,
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    padding: 10,
+    borderRadius: 10,
+  },
+  collisionMessageText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });
 

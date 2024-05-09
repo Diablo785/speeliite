@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
-
+// Importē attēlus no vietējā projekta mapes
 import logo from './images/logo.png';
 import ceo from './images/ceo.png';
 import junior from './images/junior.png';
@@ -15,7 +15,7 @@ const TeamMember = ({ image, title, name }) => (
   </View>
 );
 
-const App = () => (
+const Info = () => (
   <View style={styles.container}>
     <Image source={logo} style={styles.logo} />
     <Text style={styles.text}>OUR TEAM</Text>
@@ -32,20 +32,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
     alignItems: 'center',
-    justifyContent: 'flex-start', 
-    paddingTop: 50, 
+    justifyContent: 'flex-start', // Maina izkārtojumu, lai sāktu no augšas
+    paddingTop: 50, // Pievieno atstarpi virs konteinera
   },
   logo: {
     width: 300,
     height: 300,
-    marginBottom: 10, 
+    marginBottom: 10, // Samazina atstarpes apakšu zem logotipa
     marginTop: 60,
   },
   text: {
     color: 'white',
     fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 50, 
+    marginBottom: 50, // Samazina atstarpes augšu virs teksta
   },
   team: {
     flexDirection: 'row',
@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
   },
   member: {
     alignItems: 'center',
-    margin: 10, 
   },
   image: {
     width: 100,
@@ -63,13 +62,13 @@ const styles = StyleSheet.create({
   },
   title: {
     color: 'white',
-    fontSize: 6, 
-    marginTop: 10, 
+    fontSize: 5, // Samazina nosaukuma fonta izmēru
+    marginTop: 10, // Pievieno atstarpi virs nosaukuma
   },
   name: {
     color: 'white',
-    fontSize: 10, 
+    fontSize: 10, // Samazina vārda fonta izmēru
   },
 });
 
-export default App;
+export default Info;
