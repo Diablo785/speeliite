@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, Modal } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Sidebar from './SideBar';
@@ -34,28 +34,16 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
     const [selectedSkin, setSelectedSkin] = useState(null);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [popupColor, setPopupColor] = useState(null);
-    const [userData, setUserData] = useState(null);
+    const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
+    const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
     const [sidebarOpen, setSidebarOpen] = useState(false);
   
     useEffect(() => {
       setSidebarOpen(false);
-      getUserDataFromStorage();
     }, []);
   
     const toggleSidebar = () => {
       setSidebarOpen(!sidebarOpen);
-    };
-  
-    const getUserDataFromStorage = async () => {
-      try {
-        const storedUserData = await AsyncStorage.getItem('userData');
-        if (storedUserData) {
-          const parsedUserData = JSON.parse(storedUserData);
-          setUserData(parsedUserData);
-        }
-      } catch (error) {
-        console.error('Error getting user data from AsyncStorage:', error);
-      }
     };
   
     useEffect(() => {
@@ -160,10 +148,10 @@ const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
     backgroundColor: 'black',
+    padding: 20,
   },
   contentContainer: {
     flex: 1,

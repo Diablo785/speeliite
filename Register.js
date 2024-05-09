@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput} from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, TextInput, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -9,6 +9,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   
   const logoSlideInAnimation = useRef(new Animated.Value(-200)).current;
   const buttonsSlideInAnimation = useRef(new Animated.Value(300)).current;
@@ -27,6 +28,21 @@ const Register = () => {
       }),
     ]).start();
   }, []);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+        setIsKeyboardOpen(true);
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+        setIsKeyboardOpen(false);
+    });
+
+    return () => {
+        keyboardDidShowListener.remove();
+        keyboardDidHideListener.remove();
+    };
+}, []);
 
   const handleRegistration = async () => {
     if (!username || !password || !email) {
@@ -111,18 +127,23 @@ const Register = () => {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.logoContainer, { transform: [{ translateY: logoSlideInAnimation }] }]}>
-        <Image source={require('./images/logo.png')} style={styles.logo} />
-      </Animated.View>
-      <View style={styles.middleContainer}>
-        <TouchableOpacity style={styles.leftButton} onPress={navigateToLogin}>
-          <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
-        </TouchableOpacity>
-        <Text style={styles.loginText}>REGISTER</Text>
-        <TouchableOpacity style={styles.rightButton} onPress={navigateToLogin}>
-          <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
-        </TouchableOpacity>
-      </View>
+        {!isKeyboardOpen && (
+        <>
+            <Animated.View style={[styles.logoContainer, { transform: [{ translateY: logoSlideInAnimation }] }]}>
+              <Image source={require('./images/logo.png')} style={styles.logo} />
+            </Animated.View>
+
+            <View style={styles.middleContainer}>
+              <TouchableOpacity style={styles.leftButton} onPress={navigateToLogin}>
+                <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
+              </TouchableOpacity>
+              <Text style={styles.loginText}>REGISTER</Text>
+              <TouchableOpacity style={styles.rightButton} onPress={navigateToLogin}>
+                <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
+              </TouchableOpacity>
+            </View>
+        </>
+        )}
       <Animated.View style={[styles.buttonContainer, { transform: [{ translateY: buttonsSlideInAnimation }] }]}>
         <TextInput
           style={styles.input}
