@@ -22,8 +22,9 @@ class Register {
 
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-        $stmt = $conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $username, $hashedPassword, $email);
+        $stmt = $conn->prepare("INSERT INTO users (username, password, email, credits) VALUES (?, ?, ?, ?)");
+        $initialCredits = 0; // Set the initial credits to 0
+        $stmt->bind_param("sssi", $username, $hashedPassword, $email, $initialCredits);
 
         if ($stmt->execute()) {
             return array("success" => true);
