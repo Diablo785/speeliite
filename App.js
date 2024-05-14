@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import MainMenu from './MainMenu';
@@ -31,30 +32,43 @@ const App = () => {
   };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={loggedIn ? "MainMenu" : "LandingPage"}
-        screenOptions={{ headerShown: false }}>
-        {!loggedIn ? (
-          <>
-            <Stack.Screen name="LandingPage" component={LandingPage} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Register" component={Register} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="MainMenu" component={MainMenu} />
-            <Stack.Screen name="Game" component={Game} />
-            <Stack.Screen name="Skins" component={Skins} />
-            <Stack.Screen name="Info" component={Info} />
-            <Stack.Screen name="LandingPage" component={LandingPage} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Register" component={Register} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={loggedIn ? "MainMenu" : "LandingPage"}
+          screenOptions={{ headerShown: false }}>
+          {!loggedIn ? (
+            <>
+              <Stack.Screen name="LandingPage" component={LandingPage} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Register" component={Register} />
+              <Stack.Screen name="MainMenu" component={MainMenu} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="MainMenu" component={MainMenu} />
+              <Stack.Screen name="Game" component={Game} />
+              <Stack.Screen name="Skins" component={PaymentWrapper} />
+              <Stack.Screen name="Info" component={Info} />
+              <Stack.Screen name="LandingPage" component={LandingPage} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Register" component={Register} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
   );
-};
+}
 
 export default App;
+
+
+
+function PaymentWrapper() {
+  return (
+    <StripeProvider
+      publishableKey="pk_test_51PFvvo1DYMoaKsH8LU7h9j4D9sDRlIWQgtH9LPLuwlQjL9Izayz3lbGCsWoNd8DcwUP5GPWdoy2TzrDT4cfiFRgS00Xc1Yk8vr"
+    >
+      <Skins />
+    </StripeProvider>
+  );
+}

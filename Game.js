@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
+
 const { width, height } = Dimensions.get('window');
 const MOVE_INCREMENT = 5;
 const COUNTDOWN_DURATION = 3;
@@ -31,33 +32,39 @@ const Game = () => {
 
   const [obstacles, setObstacles] = useState([]);
 
-  const isIntersecting = (rect1, rect2) => {
+  const isIntersecting = (playerRect, obstacleRect) => {
     return (
-      rect1.x < rect2.x + rect2.width &&
-      rect1.x + rect1.width > rect2.x &&
-      rect1.y < rect2.y + rect2.height &&
-      rect1.y + rect1.height > rect2.y
+      playerRect.x < obstacleRect.x + hitboxSize &&
+      playerRect.x + hitboxSize > obstacleRect.x &&
+      playerRect.y < obstacleRect.y + hitboxSize &&
+      playerRect.y + hitboxSize > obstacleRect.y
     );
   };
 
   useEffect(() => {
-    obstacles.forEach((position, index) => {
-      const playerHitbox = {
-        x: playerPosition,
-        y: height - 175,
-        width: hitboxSize,
-        height: hitboxSize,
-      };
+    const obstacleCoordinates = obstacles.map((position, index) => {
+      const obstacleX = position;
+      const obstacleY = height - 50;
+      return { x: obstacleX, y: obstacleY };
+    });
   
+    const playerHitbox = {
+      x: playerPosition,
+      y: height - 175,
+      width: hitboxSize,
+      height: hitboxSize,
+    };
+  
+    obstacleCoordinates.forEach(obstacle => {
       const obstacleHitbox = {
-        x: position,
-        y: height - 50, // Adjust as needed
+        x: obstacle.x,
+        y: obstacle.y,
         width: hitboxSize,
         height: hitboxSize,
       };
   
       if (isIntersecting(playerHitbox, obstacleHitbox)) {
-        console.log(`Player collided with obstacle at position ${position}`);
+        console.log(`Player collided with obstacle at position (${obstacle.x}, ${obstacle.y})`);
         setIsGameInProgress(false);
         clearInterval(moveIntervalRef.current);
         setCollisionMessage('You collided with an obstacle!');
@@ -280,16 +287,16 @@ const Obstacle = ({ position, setObstacles }) => {
       duration: 4000,
       useNativeDriver: true,
     });
-
+  
     animation.start(() => {
       // Remove the obstacle from state when animation completes
       setObstacles(prevObstacles => prevObstacles.filter(pos => pos !== position));
     });
-
+  
     return () => {
       animation.stop();
     };
-  }, []);
+  }, [position]);
 
   return (
     <Animated.View

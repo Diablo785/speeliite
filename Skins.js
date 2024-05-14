@@ -4,6 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Sidebar from './SideBar';
+import PaymentWindow from './PaymentWindow';
 
 const CustomPopup = ({ isVisible, skin, price, onClose, onBuy, backgroundColor }) => {
   return (
@@ -34,6 +35,7 @@ const SkinsPage = () => {
   const navigation = useNavigation();
   const [selectedSkin, setSelectedSkin] = useState(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isPaymentWindowVisible, setIsPaymentWindowVisible] = useState(false);
   const [popupColor, setPopupColor] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userCredits, setUserCredits] = useState(0);
@@ -170,6 +172,18 @@ const SkinsPage = () => {
     setIsPopupVisible(false);
   };
 
+  const handleClosePaymentWindow = () => {
+    setIsPaymentWindowVisible(false);
+  };
+
+  const handleAddButtonClick = () => {
+    setIsPaymentWindowVisible(true);
+  };
+
+  const handleConfirm = () => {
+    setIsPaymentWindowVisible(false);
+  };
+
   const rows = [
     { color: '#0C9600', texts: ['Cat', 'Dog', 'Apple'], images: [require('./images/cat.png'), require('./images/dog.png'), require('./images/apple.png')] },
     { color: '#2059EC', texts: ['Globe', 'Toad', 'Pickle'], images: [require('./images/globe.png'), require('./images/toad.png'), require('./images/pickle.png')] },
@@ -192,7 +206,8 @@ const SkinsPage = () => {
         setSidebarOpen={setSidebarOpen}
       />
       <View style={styles.blueBox}>
-        <Text style={styles.blueBoxText}>$ {userCredits}</Text>
+        <Text style={styles.blueBoxText} onPress={handleAddButtonClick}>$ {userCredits}</Text>
+      <PaymentWindow isVisible={isPaymentWindowVisible} onClose={handleClosePaymentWindow} onConfirm={handleConfirm} />
       </View>
       <View style={styles.contentContainer}>
         {rows.map((row, rowIndex) => (
@@ -285,7 +300,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-
   comingSoonText: {
     color: 'white',
     fontStyle: 'italic',
@@ -308,7 +322,7 @@ const styles = StyleSheet.create({
   },
   blueBox: {
     position: 'absolute',
-    top: 25,
+    top: 30,
     right: 20,
     backgroundColor: 'blue',
     justifyContent: 'center',
