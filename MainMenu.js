@@ -65,8 +65,8 @@ const MainMenu = () => {
       </Animated.View>
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome,</Text>
-        <Text style={styles.usernameText}>{userData ? userData.username : 'User'}!</Text>
+        <Text style={styles.welcomeText} onPress={() => navigation.navigate('Profile')}>Welcome,</Text>
+        <Text style={styles.usernameText} onPress={() => navigation.navigate('Profile')}>{userData ? userData.username : 'User'}!</Text>
       </View>
       <Animated.View style={[styles.buttonContainer, { transform: [{ translateY: buttonsSlideInAnimation }] }]}>
         <ShadowWrapper>

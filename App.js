@@ -9,6 +9,8 @@ import Skins from './Skins';
 import Login from './Login';
 import Register from './Register';
 import Info from './Info';
+import Profile from './Profile';
+import Leaderboard from './Leaderboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createStackNavigator();
@@ -52,6 +54,8 @@ const App = () => {
               <Stack.Screen name="LandingPage" component={LandingPage} />
               <Stack.Screen name="Login" component={Login} />
               <Stack.Screen name="Register" component={Register} />
+              <Stack.Screen name="Profile" component={Profile} />
+              <Stack.Screen name="Leaderboard" component={Leaderboard} />
             </>
           )}
         </Stack.Navigator>

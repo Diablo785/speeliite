@@ -10,6 +10,7 @@ const PaymentWindow = ({ isVisible, onClose }) => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [paymentIntentData, setPaymentIntentData] = useState(null);
+    const [inProgress, setInProgress] = useState(false);
 
     const fetchPaymentSheetParams = async () => {
         try {
@@ -89,6 +90,10 @@ const PaymentWindow = ({ isVisible, onClose }) => {
     };
 
     const handleConfirm = async () => {
+        if(inProgress){
+            return;
+        }
+        setInProgress(true);
         if (inputValue === '' || inputValue <= 0) {
             setError("Enter a valid value");
         } else {
@@ -101,13 +106,14 @@ const PaymentWindow = ({ isVisible, onClose }) => {
                 setError('Error processing payment. Please try again.');
                 setLoading(false);
             }
-        }
+        } setInProgress(false);
     };
 
     const handleInputChange = (text) => {
         const numericText = text.replace(/[^0-9]/g, '');
         setInputValue(numericText);
     };
+
 
     return (
         <Modal

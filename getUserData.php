@@ -17,13 +17,14 @@ class GetUserData {
 
             $conn = $this->db->conn;
 
-            $stmt = $conn->prepare("SELECT id, username, email FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, username, email, credits, joinDate FROM users WHERE id = ?");
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result();
 
             if ($result->num_rows == 1) {
                 $row = $result->fetch_assoc();
+                $row['password'] = $_SESSION['password']; // Include the plain text password
                 return json_encode(array("success" => true, "user" => $row));
             } else {
                 return json_encode(array("success" => false, "message" => "User data retrieval failed"));
@@ -38,4 +39,5 @@ header('Content-Type: application/json');
 
 $get_user_data = new GetUserData();
 echo $get_user_data->getUserData();
+
 ?>

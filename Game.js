@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-
 
 const { width, height } = Dimensions.get('window');
 const MOVE_INCREMENT = 5;
 const COUNTDOWN_DURATION = 3;
+const OBSTACLE_SPEED = 6;
+const OBSTACLE_WIDTH = 50;
+const OBSTACLE_HEIGHT = 50;
 
 const FPSCounter = ({ fps }) => {
   return (
@@ -25,12 +28,12 @@ const Game = () => {
   const [isCountdownPaused, setIsCountdownPaused] = useState(false);
   const [isGameInProgress, setIsGameInProgress] = useState(false);
   const [collisionMessage, setCollisionMessage] = useState('');
+  const [obstaclePositions, setObstaclePositions] = useState([]);
+  const [generateBlocks, setGenerateBlocks] = useState(true);
   const moveIntervalRef = useRef(null);
   const countdownAnimations = useRef(Array.from({ length: COUNTDOWN_DURATION }, () => new Animated.Value(0))).current;
   const navigation = useNavigation();
   const hitboxSize = 50;
-
-  const [obstacles, setObstacles] = useState([]);
 
   const isIntersecting = (playerRect, obstacleRect) => {
     return (
@@ -42,19 +45,17 @@ const Game = () => {
   };
 
   useEffect(() => {
-    const obstacleCoordinates = obstacles.map((position, index) => {
-      const obstacleX = position;
-      const obstacleY = height - 50;
-      return { x: obstacleX, y: obstacleY };
+    const obstacleCoordinates = obstaclePositions.map(obstacle => {
+      return { x: obstacle.x, y: obstacle.y };
     });
-  
+
     const playerHitbox = {
       x: playerPosition,
       y: height - 175,
       width: hitboxSize,
       height: hitboxSize,
     };
-  
+
     obstacleCoordinates.forEach(obstacle => {
       const obstacleHitbox = {
         x: obstacle.x,
@@ -62,16 +63,18 @@ const Game = () => {
         width: hitboxSize,
         height: hitboxSize,
       };
-  
+
       if (isIntersecting(playerHitbox, obstacleHitbox)) {
         console.log(`Player collided with obstacle at position (${obstacle.x}, ${obstacle.y})`);
         setIsGameInProgress(false);
         clearInterval(moveIntervalRef.current);
         setCollisionMessage('You collided with an obstacle!');
+        setIsCountdownPaused(true);
+        setGenerateBlocks(false);
         return;
       }
     });
-  }, [playerPosition, obstacles]);
+  }, [playerPosition, obstaclePositions]);
 
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
@@ -99,15 +102,13 @@ const Game = () => {
   useEffect(() => {
     if (isGameInProgress && countdown === 0) {
       const obstacleInterval = setInterval(() => {
-        const numObstaclesToSpawn = Math.ceil(Math.random() * 4); // Randomly spawn up to 4 obstacles
-        const newObstacles = [];
-        for (let i = 0; i < numObstaclesToSpawn; i++) {
-          const newPosition = Math.random() * (width - 50); // Random position within the screen width
-          newObstacles.push(newPosition);
-        }
-        setObstacles(prevObstacles => [...prevObstacles, ...newObstacles]);
+        const newPosition = Math.random() * (width - OBSTACLE_WIDTH);
+        setObstaclePositions(prevPositions => [
+          ...prevPositions,
+          { x: newPosition, y: -OBSTACLE_HEIGHT, passed: false }
+        ]);
       }, 2000);
-  
+
       return () => clearInterval(obstacleInterval);
     }
   }, [isGameInProgress, countdown]);
@@ -129,7 +130,7 @@ const Game = () => {
     }
   };
 
-  const handleMainmenuPress = () => {
+  const handleMainMenuPress = () => {
     navigation.navigate('MainMenu');
   };
 
@@ -145,21 +146,53 @@ const Game = () => {
   const handleResumePress = () => {
     setIsPaused(false);
     setIsCountdownPaused(false);
-    startCountdownAnimations(); // Start the countdown animations again
+    startCountdownAnimations();
   };
 
-  const handleRestartPress = () => {
+  const handleRestartPress = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (userId) {
+        const sendScoreToPHP = async (userId, score) => {
+          try {
+            const response = await fetch('http://192.168.8.56/speeliite/updatescore.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ userId: userId, score: score }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to send score');
+            }
+
+            console.log('Score sent successfully');
+          } catch (error) {
+            console.error('Error sending score:', error.message);
+          }
+        };
+
+        sendScoreToPHP(userId, score);
+      } else {
+        console.warn('User ID not found in AsyncStorage. Skipping score sending.');
+      }
+    } catch (error) {
+      console.error('Error retrieving user ID from AsyncStorage:', error.message);
+    }
+
     setScore(0);
     setCountdown(COUNTDOWN_DURATION);
     clearInterval(moveIntervalRef.current);
     setIsPaused(false);
     setIsCountdownPaused(false);
     setIsGameInProgress(false);
-    setPlayerPosition(width / 2 - 25); // Reset player's position to the center
-    setObstacles([]);
+    setPlayerPosition(width / 2 - 25);
+    setObstaclePositions([]);
     setCollisionMessage('');
     countdownAnimations.forEach(anim => anim.setValue(0));
     startCountdownAnimations();
+    setGenerateBlocks(true);
   };
 
   const startCountdownAnimations = () => {
@@ -184,7 +217,7 @@ const Game = () => {
         }
       }
     }, 1000);
-  
+
     return () => clearInterval(gameLoop);
   }, [countdown, isPaused, isCountdownPaused]);
 
@@ -205,8 +238,24 @@ const Game = () => {
   }, [currentDirection, countdown, isPaused]);
 
   useEffect(() => {
+    const moveObstacle = () => {
+      if (generateBlocks) {
+        setObstaclePositions(prevPositions => {
+          const newPositions = prevPositions.map(pos => ({ ...pos, y: pos.y + OBSTACLE_SPEED }));
+          return newPositions;
+        });
+      }
+    };
+
+    const obstacleInterval = setInterval(moveObstacle, 10);
+    return () => clearInterval(obstacleInterval);
+  }, [obstaclePositions, generateBlocks]);
+
+  useEffect(() => {
     startCountdownAnimations();
   }, []);
+
+  const obstaclesToRender = obstaclePositions.filter(obstacle => !obstacle.passed);
 
   return (
     <View style={styles.container}>
@@ -214,7 +263,7 @@ const Game = () => {
       <TouchableOpacity onPress={handlePausePress} style={styles.pauseIcon}>
         <Image source={require('./images/pause_icon.png')} style={styles.pauseIconImage} />
       </TouchableOpacity>
-      {isPaused && (
+      {isPaused ? (
         <View style={styles.overlay}>
           <Text style={styles.pausedText}>Paused</Text>
           <TouchableOpacity onPress={handleResumePress} style={styles.menuItem}>
@@ -223,57 +272,78 @@ const Game = () => {
           <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
             <Text style={styles.menuText}>Restart</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => console.log("Settings")} style={styles.menuItem}>
-            <Text style={styles.menuText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleMainmenuPress} style={styles.menuItem}>
+          <TouchableOpacity onPress={handleMainMenuPress} style={styles.menuItem}>
             <Text style={styles.menuText}>Main Menu</Text>
           </TouchableOpacity>
         </View>
-      )}
-      <View style={[styles.player, { left: playerPosition }]}></View>
-      <View style={styles.arrowContainer}>
-        <TouchableOpacity
-          onPressIn={() => handlePress('left')}
-          onPressOut={handleRelease}
-        >
-          <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPressIn={() => handlePress('right')}
-          onPressOut={handleRelease}
-        >
-          <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
-        </TouchableOpacity>
-      </View>
-      {!isPaused && (
-        <View style={styles.countdownContainer}>
-          {countdownAnimations.map((anim, index) => (
-            <Animated.Text
-              key={index}
-              style={[
-                styles.countdown,
-                {
-                  transform: [{ translateY: anim }],
-                },
-              ]}
-            >
-              {COUNTDOWN_DURATION - index}
-            </Animated.Text>
+      ) : (
+        <>
+          {isGameInProgress && countdown === 0 ? (
+            <>
+              {collisionMessage ? (
+                <View style={styles.overlay}>
+                  <Text style={styles.collisionMessage}>{collisionMessage}</Text>
+                  <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
+                    <Text style={styles.menuText}>Restart</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleMainMenuPress} style={styles.menuItem}>
+                    <Text style={styles.menuText}>Main Menu</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.scoreContainer}>
+                    <Text style={styles.scoreText}>Score: {score}</Text>
+                  </View>
+                  <View style={[styles.player, { left: playerPosition }]} />
+                  <View style={styles.arrowContainer}>
+                    <TouchableOpacity
+                      onPressIn={() => handlePress('left')}
+                      onPressOut={handleRelease}
+                    >
+                      <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPressIn={() => handlePress('right')}
+                      onPressOut={handleRelease}
+                    >
+                      <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </>
+          ) : null}
+          {!isPaused && (
+            <View style={styles.countdownContainer}>
+              {countdownAnimations.map((anim, index) => (
+                <Animated.Text
+                  key={index}
+                  style={[
+                    styles.countdown,
+                    {
+                      transform: [{ translateY: anim }],
+                    },
+                  ]}
+                >
+                  {COUNTDOWN_DURATION - index}
+                </Animated.Text>
+              ))}
+            </View>
+          )}
+          {countdown === 0 && (
+            <Text style={styles.score}>{score}</Text>
+          )}
+          {collisionMessage !== '' && (
+            <View style={styles.collisionMessage}>
+              <Text style={styles.collisionMessageText}>{collisionMessage}</Text>
+            </View>
+          )}
+          {obstaclePositions.map((position, index) => (
+            <Obstacle key={index} position={position} setObstacles={setObstaclePositions} />
           ))}
-        </View>
+        </>
       )}
-      {countdown === 0 && (
-        <Text style={styles.score}>{score}</Text>
-      )}
-      {collisionMessage !== '' && (
-        <View style={styles.collisionMessage}>
-          <Text style={styles.collisionMessageText}>{collisionMessage}</Text>
-        </View>
-      )}
-      {obstacles.map((position, index) => (
-        <Obstacle key={index} position={position} setObstacles={setObstacles} />
-      ))}
     </View>
   );
 };

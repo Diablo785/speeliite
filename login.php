@@ -15,26 +15,32 @@ class Login {
 
         $username = $conn->real_escape_string($username);
 
-        $query = "SELECT id, username, password FROM users WHERE username='$username'";
+        $query = "SELECT id, username, password, email, credits, joinDate FROM users WHERE username='$username'";
         $result = $conn->query($query);
 
         if ($result && $result->num_rows > 0) {
             $row = $result->fetch_assoc();
             $dbHashedPassword = $row['password'];
 
-            // Verify the hashed password
             if (password_verify($password, $dbHashedPassword)) {
-                // Password matches, login successful
                 $_SESSION['user_id'] = $row['id'];
+                $_SESSION['password'] = $password;
                 $_SESSION['username'] = $row['username'];
-                // Return user data along with success message
-                return json_encode(array("success" => true, "message" => "Login successful", "userData" => $row));
+                $_SESSION['email'] = $row['email'];
+                $_SESSION['credits'] = $row['credits'];
+                $_SESSION['joinDate'] = $row['joinDate'];
+                return json_encode(array("success" => true, "message" => "Login successful", "userData" => array(
+                    "id" => $row['id'],
+                    "username" => $row['username'],
+                    "password" => $password,
+                    "email" => $row['email'],
+                    "credits" => $row['credits'],
+                    "joinDate" => $row['joinDate']
+                )));
             } else {
-                // Password does not match
                 return json_encode(array("success" => false, "message" => "Invalid password"));
             }
         } else {
-            // User not found
             return json_encode(array("success" => false, "message" => "Invalid username"));
         }
     }
@@ -60,4 +66,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     http_response_code(405);
     echo json_encode(array("success" => false, "message" => "Invalid request method"));
 }
+
 ?>

@@ -66,7 +66,6 @@ const Login = () => {
             if (data.success) {
                 console.log('Login successful');
                 if (data.userData) {
-                    console.log('User data:', data.userData);
                     await AsyncStorage.setItem('userData', JSON.stringify(data.userData));
                 }
                 navigation.navigate('MainMenu');
