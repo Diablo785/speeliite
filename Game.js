@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
-const MOVE_INCREMENT = 5;
+const MOVE_INCREMENT = 10; // Adjusted for better responsiveness
 const COUNTDOWN_DURATION = 3;
 const OBSTACLE_SPEED = 6;
 const OBSTACLE_WIDTH = 50;
@@ -18,6 +18,21 @@ const FPSCounter = ({ fps }) => {
   );
 };
 
+const skinImages = {
+  Cat: require('./images/cat.png'),
+  Dog: require('./images/dog.png'),
+  Apple: require('./images/apple.png'),
+  Globe: require('./images/globe.png'),
+  Toad: require('./images/toad.png'),
+  Pickle: require('./images/pickle.png'),
+  Rat: require('./images/rat.png'),
+  Pig: require('./images/pig.png'),
+  Bacha: require('./images/bacha.png'),
+  Junko: require('./images/junko.png'),
+  Tike: require('./images/tike.png'),
+  Xinjo: require('./images/xinjo.png')
+};
+
 const Game = () => {
   const [fps, setFps] = useState(0);
   const [score, setScore] = useState(0);
@@ -26,55 +41,12 @@ const Game = () => {
   const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
   const [isPaused, setIsPaused] = useState(false);
   const [isCountdownPaused, setIsCountdownPaused] = useState(false);
-  const [isGameInProgress, setIsGameInProgress] = useState(false);
-  const [collisionMessage, setCollisionMessage] = useState('');
   const [obstaclePositions, setObstaclePositions] = useState([]);
   const [generateBlocks, setGenerateBlocks] = useState(true);
+  const [equippedSkin, setEquippedSkin] = useState(null);
   const moveIntervalRef = useRef(null);
   const countdownAnimations = useRef(Array.from({ length: COUNTDOWN_DURATION }, () => new Animated.Value(0))).current;
   const navigation = useNavigation();
-  const hitboxSize = 50;
-
-  const isIntersecting = (playerRect, obstacleRect) => {
-    return (
-      playerRect.x < obstacleRect.x + hitboxSize &&
-      playerRect.x + hitboxSize > obstacleRect.x &&
-      playerRect.y < obstacleRect.y + hitboxSize &&
-      playerRect.y + hitboxSize > obstacleRect.y
-    );
-  };
-
-  useEffect(() => {
-    const obstacleCoordinates = obstaclePositions.map(obstacle => {
-      return { x: obstacle.x, y: obstacle.y };
-    });
-
-    const playerHitbox = {
-      x: playerPosition,
-      y: height - 175,
-      width: hitboxSize,
-      height: hitboxSize,
-    };
-
-    obstacleCoordinates.forEach(obstacle => {
-      const obstacleHitbox = {
-        x: obstacle.x,
-        y: obstacle.y,
-        width: hitboxSize,
-        height: hitboxSize,
-      };
-
-      if (isIntersecting(playerHitbox, obstacleHitbox)) {
-        console.log(`Player collided with obstacle at position (${obstacle.x}, ${obstacle.y})`);
-        setIsGameInProgress(false);
-        clearInterval(moveIntervalRef.current);
-        setCollisionMessage('You collided with an obstacle!');
-        setIsCountdownPaused(true);
-        setGenerateBlocks(false);
-        return;
-      }
-    });
-  }, [playerPosition, obstaclePositions]);
 
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
@@ -100,18 +72,18 @@ const Game = () => {
   }, []);
 
   useEffect(() => {
-    if (isGameInProgress && countdown === 0) {
-      const obstacleInterval = setInterval(() => {
-        const newPosition = Math.random() * (width - OBSTACLE_WIDTH);
-        setObstaclePositions(prevPositions => [
-          ...prevPositions,
-          { x: newPosition, y: -OBSTACLE_HEIGHT, passed: false }
-        ]);
-      }, 2000);
-
-      return () => clearInterval(obstacleInterval);
-    }
-  }, [isGameInProgress, countdown]);
+    const fetchEquippedSkin = async () => {
+      try {
+        const skin = await AsyncStorage.getItem('equippedSkin');
+        console.log('Fetched equipped skin:', skin); // Add this log
+        setEquippedSkin(skin);
+      } catch (error) {
+        console.error('Error fetching equipped skin:', error);
+      }
+    };
+  
+    fetchEquippedSkin();
+  }, []);
 
   const moveLeft = () => {
     setPlayerPosition(position => Math.max(0, position - MOVE_INCREMENT));
@@ -122,58 +94,23 @@ const Game = () => {
   };
 
   const handlePress = (direction) => {
-    if ((direction === 'left' && currentDirection === 'right') || (direction === 'right' && currentDirection === 'left')) {
-      setCurrentDirection(direction);
-      clearInterval(moveIntervalRef.current);
-    } else {
-      setCurrentDirection(direction);
-    }
-  };
-
-  const handleMainMenuPress = () => {
-    navigation.navigate('MainMenu');
+    setCurrentDirection(prevDirection => {
+      if ((direction === 'left' && prevDirection === 'right') || (direction === 'right' && prevDirection === 'left')) {
+        clearInterval(moveIntervalRef.current);
+      }
+      return direction;
+    });
   };
 
   const handleRelease = () => {
     setCurrentDirection(null);
   };
 
-  const handlePausePress = () => {
-    setIsPaused(true);
-    setIsCountdownPaused(true);
-  };
-
-  const handleResumePress = () => {
-    setIsPaused(false);
-    setIsCountdownPaused(false);
-    startCountdownAnimations();
-  };
-
   const handleRestartPress = async () => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) {
-        const sendScoreToPHP = async (userId, score) => {
-          try {
-            const response = await fetch('http://192.168.8.56/speeliite/updatescore.php', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ userId: userId, score: score }),
-            });
-
-            if (!response.ok) {
-              throw new Error('Failed to send score');
-            }
-
-            console.log('Score sent successfully');
-          } catch (error) {
-            console.error('Error sending score:', error.message);
-          }
-        };
-
-        sendScoreToPHP(userId, score);
+        await sendScoreToPHP(userId, score);
       } else {
         console.warn('User ID not found in AsyncStorage. Skipping score sending.');
       }
@@ -181,18 +118,57 @@ const Game = () => {
       console.error('Error retrieving user ID from AsyncStorage:', error.message);
     }
 
+    resetGame();
+  };
+
+  const sendScoreToPHP = async (userId, score) => {
+    try {
+      const response = await fetch('http://192.168.85.175/speeliite/updatescore.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, score }),
+      });
+      if (!response.ok) throw new Error('Failed to send score');
+      console.log('Score sent successfully');
+    } catch (error) {
+      console.error('Error sending score:', error.message);
+    }
+  };
+
+  const handlePausePress = () => {
+    setIsPaused(true);
+  };
+
+  const handleResumePress = () => {
+    setIsPaused(false);
+    startCountdownAnimations(); // Start the countdown animations again
+  };
+
+  const resetGame = () => {
     setScore(0);
     setCountdown(COUNTDOWN_DURATION);
     clearInterval(moveIntervalRef.current);
-    setIsPaused(false);
     setIsCountdownPaused(false);
-    setIsGameInProgress(false);
+    countdownAnimations.forEach(anim => anim.setValue(0));
     setPlayerPosition(width / 2 - 25);
     setObstaclePositions([]);
-    setCollisionMessage('');
-    countdownAnimations.forEach(anim => anim.setValue(0));
-    startCountdownAnimations();
     setGenerateBlocks(true);
+    startCountdownAnimations();
+  };
+
+  const handleMainMenuPress = async () => {
+    console.log('Main Menu');
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (userId) {
+        await sendScoreToPHP(userId, score);
+      } else {
+        console.warn('User ID not found in AsyncStorage. Skipping score sending.');
+      }
+    } catch (error) {
+      console.error('Error retrieving user ID from AsyncStorage:', error.message);
+    }
+    navigation.navigate('MainMenu');
   };
 
   const startCountdownAnimations = () => {
@@ -206,44 +182,66 @@ const Game = () => {
     });
   };
 
+  const checkCollision = () => {
+    let collisionDetected = false;
+    obstaclePositions.forEach(obstacle => {
+      if (isCollision(playerPosition, obstacle)) {
+        clearInterval(moveIntervalRef.current);
+        setIsCountdownPaused(true); // Only pause the countdown when the player makes contact
+        console.log('Game Over: Red block touched green block!');
+        collisionDetected = true;
+      }
+    });
+    if (collisionDetected) setGenerateBlocks(false);
+  };
+
+  const isCollision = (playerPos, obstacle) => (
+    playerPos < obstacle.x + OBSTACLE_WIDTH &&
+    playerPos + 50 > obstacle.x &&
+    height - 175 < obstacle.y + OBSTACLE_HEIGHT &&
+    obstacle.y < height - 175
+  );
+
+  const generateObstacle = () => {
+    setObstaclePositions(prevPositions => [
+      ...prevPositions,
+      { x: Math.random() * (width - OBSTACLE_WIDTH), y: -OBSTACLE_HEIGHT }
+    ]);
+  };
+
   useEffect(() => {
     const gameLoop = setInterval(() => {
-      if (!isPaused && !isCountdownPaused) {
+      if (!isCountdownPaused) {
         if (countdown > 0) {
           setCountdown(prevCountdown => prevCountdown - 1);
         } else {
-          setIsGameInProgress(true);
           setScore(prevScore => prevScore + 1);
+          generateObstacle();
         }
       }
     }, 1000);
-
     return () => clearInterval(gameLoop);
-  }, [countdown, isPaused, isCountdownPaused]);
+  }, [countdown, isCountdownPaused]);
 
   useEffect(() => {
     const movePlayer = () => {
-      if (currentDirection === 'left') {
-        moveLeft();
-      } else if (currentDirection === 'right') {
-        moveRight();
+      if (currentDirection && countdown === 0) {
+        currentDirection === 'left' ? moveLeft() : moveRight();
       }
     };
 
-    if (currentDirection && countdown === 0 && !isPaused) {
+    if (currentDirection && countdown === 0 && !isCountdownPaused) {
       const moveInterval = setInterval(movePlayer, 10);
       moveIntervalRef.current = moveInterval;
       return () => clearInterval(moveInterval);
     }
-  }, [currentDirection, countdown, isPaused]);
+  }, [currentDirection, countdown, isCountdownPaused]);
 
   useEffect(() => {
     const moveObstacle = () => {
       if (generateBlocks) {
-        setObstaclePositions(prevPositions => {
-          const newPositions = prevPositions.map(pos => ({ ...pos, y: pos.y + OBSTACLE_SPEED }));
-          return newPositions;
-        });
+        setObstaclePositions(prevPositions => prevPositions.map(pos => ({ ...pos, y: pos.y + OBSTACLE_SPEED })));
+        checkCollision();
       }
     };
 
@@ -255,15 +253,13 @@ const Game = () => {
     startCountdownAnimations();
   }, []);
 
-  const obstaclesToRender = obstaclePositions.filter(obstacle => !obstacle.passed);
-
   return (
     <View style={styles.container}>
       <FPSCounter fps={fps} />
       <TouchableOpacity onPress={handlePausePress} style={styles.pauseIcon}>
         <Image source={require('./images/pause_icon.png')} style={styles.pauseIconImage} />
       </TouchableOpacity>
-      {isPaused ? (
+      {isPaused && (
         <View style={styles.overlay}>
           <Text style={styles.pausedText}>Paused</Text>
           <TouchableOpacity onPress={handleResumePress} style={styles.menuItem}>
@@ -272,112 +268,72 @@ const Game = () => {
           <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
             <Text style={styles.menuText}>Restart</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => console.log("Settings")} style={styles.menuItem}>
+            <Text style={styles.menuText}>Settings</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleMainMenuPress} style={styles.menuItem}>
             <Text style={styles.menuText}>Main Menu</Text>
           </TouchableOpacity>
         </View>
+      )}
+      {equippedSkin ? (
+      <Image source={skinImages[equippedSkin]} style={[styles.player, { left: playerPosition }]} />
       ) : (
-        <>
-          {isGameInProgress && countdown === 0 ? (
-            <>
-              {collisionMessage ? (
-                <View style={styles.overlay}>
-                  <Text style={styles.collisionMessage}>{collisionMessage}</Text>
-                  <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
-                    <Text style={styles.menuText}>Restart</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleMainMenuPress} style={styles.menuItem}>
-                    <Text style={styles.menuText}>Main Menu</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <>
-                  <View style={styles.scoreContainer}>
-                    <Text style={styles.scoreText}>Score: {score}</Text>
-                  </View>
-                  <View style={[styles.player, { left: playerPosition }]} />
-                  <View style={styles.arrowContainer}>
-                    <TouchableOpacity
-                      onPressIn={() => handlePress('left')}
-                      onPressOut={handleRelease}
-                    >
-                      <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPressIn={() => handlePress('right')}
-                      onPressOut={handleRelease}
-                    >
-                      <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </>
-          ) : null}
-          {!isPaused && (
-            <View style={styles.countdownContainer}>
-              {countdownAnimations.map((anim, index) => (
-                <Animated.Text
-                  key={index}
-                  style={[
-                    styles.countdown,
-                    {
-                      transform: [{ translateY: anim }],
-                    },
-                  ]}
-                >
-                  {COUNTDOWN_DURATION - index}
-                </Animated.Text>
-              ))}
-            </View>
-          )}
-          {countdown === 0 && (
-            <Text style={styles.score}>{score}</Text>
-          )}
-          {collisionMessage !== '' && (
-            <View style={styles.collisionMessage}>
-              <Text style={styles.collisionMessageText}>{collisionMessage}</Text>
-            </View>
-          )}
-          {obstaclePositions.map((position, index) => (
-            <Obstacle key={index} position={position} setObstacles={setObstaclePositions} />
+      console.log('Equipped skin is null or empty:', equippedSkin), // Add this log
+      <View style={[styles.player, { left: playerPosition }]}></View>
+      )}
+      {isCountdownPaused && (
+        <View style={styles.overlay1}>
+          <Text style={styles.pausedText}>You died!</Text>
+          <Text style={styles.score}>Score: {score}</Text>
+          <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
+            <Text style={styles.menuText}>Play Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={handleMainMenuPress}>
+            <Text style={styles.menuText}>Main Menu</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {obstaclePositions.map((obstacle, index) => (
+        <View key={index} style={[styles.obstacle, { left: obstacle.x, top: obstacle.y }]}></View>
+      ))}
+      <View style={styles.arrowContainer}>
+        <TouchableOpacity
+          onPressIn={() => handlePress('left')}
+          onPressOut={handleRelease}
+        >
+          <Image source={require('./images/arrow_left.png')} style={styles.arrowImage} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPressIn={() => handlePress('right')}
+          onPressOut={handleRelease}
+        >
+          <Image source={require('./images/arrow_right.png')} style={styles.arrowImage} />
+        </TouchableOpacity>
+      </View>
+      {!isCountdownPaused && (
+        <View style={styles.countdownContainer}>
+          {countdownAnimations.map((anim, index) => (
+            <Animated.Text
+              key={index}
+              style={[
+                styles.countdown,
+                {
+                  transform: [{ translateY: anim }],
+                },
+              ]}
+            >
+              {COUNTDOWN_DURATION - index}
+            </Animated.Text>
           ))}
-        </>
+        </View>
+      )}
+      {countdown === 0 && (
+        <Text style={styles.score}>{score}</Text>
       )}
     </View>
   );
 };
-
-const Obstacle = ({ position, setObstacles }) => {
-  const obstacleAnimation = useRef(new Animated.Value(-450)).current; // Start the obstacle animation from the top
-
-  useEffect(() => {
-    const animation = Animated.timing(obstacleAnimation, {
-      toValue: height + 300, // Move the obstacle beyond the bottom of the screen
-      duration: 4000,
-      useNativeDriver: true,
-    });
-  
-    animation.start(() => {
-      // Remove the obstacle from state when animation completes
-      setObstacles(prevObstacles => prevObstacles.filter(pos => pos !== position));
-    });
-  
-    return () => {
-      animation.stop();
-    };
-  }, [position]);
-
-  return (
-    <Animated.View
-      style={[
-        styles.obstacle,
-        { transform: [{ translateY: obstacleAnimation }], left: position },
-      ]}
-    ></Animated.View>
-  );
-};
-
 
 const styles = StyleSheet.create({
   container: {
@@ -404,13 +360,18 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: 'red',
   },
+  obstacle: {
+    position: 'absolute',
+    width: OBSTACLE_WIDTH,
+    height: OBSTACLE_HEIGHT,
+    backgroundColor: 'green',
+  },
   arrowContainer: {
     position: 'absolute',
     bottom: 50,
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    zIndex: 10,
   },
   arrowImage: {
     width: 65,
@@ -422,7 +383,6 @@ const styles = StyleSheet.create({
     color: 'white',
     position: 'absolute',
     top: 35,
-    zIndex: 10,
   },
   countdownContainer: {
     flexDirection: 'row',
@@ -434,7 +394,7 @@ const styles = StyleSheet.create({
     fontSize: 72,
     fontWeight: 'bold',
     color: 'white',
-    zIndex: 10,
+    zIndex: 11,
   },
   pauseIcon: {
     position: 'absolute',
@@ -448,6 +408,19 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(120, 120, 120, 0.8)',
+    width: '75%',
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: '12.5%',
+    top: '25%',
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  overlay1: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(120, 120, 120, 0.8)',
     width: '75%',
@@ -480,25 +453,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginBottom: 20,
   },
-  obstacle: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    backgroundColor: 'blue',
-  },
-  collisionMessage: {
-    position: 'absolute',
-    top: height / 2 - 50,
-    left: width / 2 - 150,
-    backgroundColor: 'rgba(255, 0, 0, 0.8)',
-    padding: 10,
-    borderRadius: 10,
-  },
-  collisionMessageText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
 });
 
 export default Game;
+

@@ -43,7 +43,7 @@ const Login = () => {
         };
     }, []);
 
-    const url = 'http://192.168.114.184/speeliite/login.php';
+    const url = 'http://192.168.46.184/speeliite/login.php';
 
     const handleLogin = async () => {
         setError('');
@@ -55,18 +55,27 @@ const Login = () => {
                 },
                 body: JSON.stringify({
                     username: username,
-                    password: password
+                    password: password,
                 }),
             });
+    
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
+    
             const data = await response.json();
             console.log('Response:', data);
+    
             if (data.success) {
                 console.log('Login successful');
                 if (data.userData) {
                     await AsyncStorage.setItem('userData', JSON.stringify(data.userData));
+                }
+                const equippedSkin = await AsyncStorage.getItem('equippedSkin');
+                if (equippedSkin) {
+                    console.log(`Currently equipped skin: ${equippedSkin}`);
+                } else {
+                    console.log('Currently equipped skin: default');
                 }
                 navigation.navigate('MainMenu');
                 console.log('Navigated to MainMenu');

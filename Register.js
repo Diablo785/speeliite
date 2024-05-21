@@ -66,7 +66,7 @@ const Register = () => {
       return;
     }
   
-    const registerUrl = 'http://192.168.114.184/speeliite/register.php';
+    const registerUrl = 'http://192.168.46.184/speeliite/register.php';
   
     console.log('Registering user with username:', username);
     console.log('Registering user with password:', password);
@@ -89,7 +89,7 @@ const Register = () => {
       const registerData = await registerResponse.json();
     
       if (registerData.success) {
-        const loginUrl = 'http://192.168.114.184/speeliite/login.php';
+        const loginUrl = 'http://192.168.46.184/speeliite/login.php';
         const loginOptions = {
           method: 'POST',
           headers: {

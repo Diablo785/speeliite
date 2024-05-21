@@ -14,7 +14,7 @@ const PaymentWindow = ({ isVisible, onClose }) => {
 
     const fetchPaymentSheetParams = async () => {
         try {
-            const response = await fetch(`http://192.168.114.184/speeliite/payment.php`, {
+            const response = await fetch(`http://192.168.46.184/speeliite/payment.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ const PaymentWindow = ({ isVisible, onClose }) => {
 
     const confirmPayment = async () => {
         try {
-            const response = await fetch('http://192.168.114.184/speeliite/paymentConfirm.php', {
+            const response = await fetch('http://192.168.46.184/speeliite/paymentConfirm.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -59,7 +59,7 @@ const Profile = () => {
 
     try {
       const updatedUserData = { userId: userData.id, username, email, password, credits, joinDate };
-      const updateUrl = 'http://192.168.114.184/speeliite/updateAccount.php';
+      const updateUrl = 'http://192.168.46.184/speeliite/updateAccount.php';
       const response = await fetch(updateUrl, {
         method: 'POST',
         headers: {

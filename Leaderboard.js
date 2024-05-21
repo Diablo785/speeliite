@@ -13,14 +13,14 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboardData = async () => {
       try {
-        let apiUrl = 'http://192.168.114.184/speeliite/get_all_time_leaderboard.php';
+        let apiUrl = 'http://192.168.46.184/speeliite/get_all_time_leaderboard.php';
         if (!isAllTime) {
           const userData = await AsyncStorage.getItem('userData');
           if (!userData) {
             throw new Error('User data not found in AsyncStorage');
           }
           const { id } = JSON.parse(userData);
-          apiUrl = `http://192.168.114.184/speeliite/get_personal_leaderboard.php?userId=${id}`;
+          apiUrl = `http://192.168.46.184/speeliite/get_personal_leaderboard.php?userId=${id}`;
         }
         const response = await fetch(apiUrl);
         if (!response.ok) {
