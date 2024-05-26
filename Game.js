@@ -41,6 +41,7 @@ const Game = () => {
   const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
   const [isPaused, setIsPaused] = useState(false);
   const [isCountdownPaused, setIsCountdownPaused] = useState(false);
+  const [showScorePopup, setShowScorePopup] = useState(false);
   const [obstaclePositions, setObstaclePositions] = useState([]);
   const [generateBlocks, setGenerateBlocks] = useState(true);
   const [equippedSkin, setEquippedSkin] = useState(null);
@@ -107,31 +108,22 @@ const Game = () => {
   };
 
   const handleRestartPress = async () => {
-    try {
-      const userId = await AsyncStorage.getItem('user_id');
-      if (userId) {
-        await sendScoreToPHP(userId, score);
-      } else {
-        console.warn('User ID not found in AsyncStorage. Skipping score sending.');
-      }
-    } catch (error) {
-      console.error('Error retrieving user ID from AsyncStorage:', error.message);
-    }
-
     resetGame();
   };
 
   const sendScoreToPHP = async (userId, score) => {
     try {
-      const response = await fetch('http://192.168.85.175/speeliite/updatescore.php', {
+      const response = await fetch('http://192.168.46.184/speeliite/updateScore.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ userId, score }),
       });
-      if (!response.ok) throw new Error('Failed to send score');
-      console.log('Score sent successfully');
+      const data = await response.json();
+      console.log('Score sent successfully:', data);
     } catch (error) {
-      console.error('Error sending score:', error.message);
+      console.error('Error sending score:', error);
     }
   };
 
@@ -149,6 +141,7 @@ const Game = () => {
     setCountdown(COUNTDOWN_DURATION);
     clearInterval(moveIntervalRef.current);
     setIsCountdownPaused(false);
+    setShowScorePopup(false);
     countdownAnimations.forEach(anim => anim.setValue(0));
     setPlayerPosition(width / 2 - 25);
     setObstaclePositions([]);
@@ -158,17 +151,6 @@ const Game = () => {
 
   const handleMainMenuPress = async () => {
     console.log('Main Menu');
-    try {
-      const userId = await AsyncStorage.getItem('user_id');
-      if (userId) {
-        await sendScoreToPHP(userId, score);
-      } else {
-        console.warn('User ID not found in AsyncStorage. Skipping score sending.');
-      }
-    } catch (error) {
-      console.error('Error retrieving user ID from AsyncStorage:', error.message);
-    }
-    navigation.navigate('MainMenu');
   };
 
   const startCountdownAnimations = () => {
@@ -192,7 +174,10 @@ const Game = () => {
         collisionDetected = true;
       }
     });
-    if (collisionDetected) setGenerateBlocks(false);
+    if (collisionDetected) {
+      setGenerateBlocks(false);
+      setTimeout(() => setShowScorePopup(true), 1000); // Show the score popup after a short delay
+    }
   };
 
   const isCollision = (playerPos, obstacle) => (
@@ -277,13 +262,13 @@ const Game = () => {
         </View>
       )}
       {equippedSkin ? (
-      <Image source={skinImages[equippedSkin]} style={[styles.player, { left: playerPosition }]} />
+        <Image source={skinImages[equippedSkin]} style={[styles.player, { left: playerPosition }]} />
       ) : (
-      console.log('Equipped skin is null or empty:', equippedSkin), // Add this log
-      <View style={[styles.player, { left: playerPosition }]}></View>
+        console.log('Equipped skin is null or empty:', equippedSkin), // Add this log
+        <View style={[styles.player, { left: playerPosition }]}></View>
       )}
       {isCountdownPaused && (
-        <View style={styles.overlay1}>
+        <View style={styles.overlay}>
           <Text style={styles.pausedText}>You died!</Text>
           <Text style={styles.score}>Score: {score}</Text>
           <TouchableOpacity onPress={handleRestartPress} style={styles.menuItem}>
@@ -291,6 +276,37 @@ const Game = () => {
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={handleMainMenuPress}>
             <Text style={styles.menuText}>Main Menu</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {showScorePopup && (
+        <View style={styles.overlay1}>
+          <Text style={styles.pausedText}>Save Score?</Text>
+          <Text style={styles.score}>Score: {score}</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={async () => {
+              try {
+                const userData = await AsyncStorage.getItem('userData');
+                if (userData) {
+                  const { id } = JSON.parse(userData);
+                  await sendScoreToPHP(id, score);
+                } else {
+                  console.warn('User data not found in AsyncStorage. Skipping score sending.');
+                }
+              } catch (error) {
+                console.error('Error retrieving user data from AsyncStorage:', error.message);
+              }
+              setShowScorePopup(false);
+            }}
+          >
+            <Text style={styles.menuText}>Yes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setShowScorePopup(false)}
+          >
+            <Text style={styles.menuText}>No</Text>
           </TouchableOpacity>
         </View>
       )}

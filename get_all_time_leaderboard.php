@@ -6,8 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $db = new DB();
     $conn = $db->conn;
 
-    // Fetch all-time leaderboard with usernames
-    $sql = "SELECT users.username, scores.score 
+    // Fetch all-time leaderboard with usernames and game dates
+    $sql = "SELECT users.username, scores.score, scores.game_date 
             FROM scores 
             JOIN users ON scores.user_id = users.id 
             ORDER BY score DESC";

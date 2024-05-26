@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST
         $db = new DB();
         $conn = $db->conn;
 
-        // Fetch personal leaderboard with usernames
-        $sql = "SELECT users.username, scores.score 
+        // Fetch personal leaderboard with usernames and game dates
+        $sql = "SELECT users.username, scores.score, scores.game_date 
                 FROM scores 
                 JOIN users ON scores.user_id = users.id 
                 WHERE user_id = ? 

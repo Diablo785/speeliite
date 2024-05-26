@@ -40,6 +40,13 @@ const Leaderboard = () => {
     setIsAllTime(!isAllTime);
   };
 
+  const formatDate = (dateString) => {
+    // Parse the date string
+    const date = new Date(dateString);
+    // Format the date without the time
+    return date.toLocaleDateString();
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
@@ -74,12 +81,14 @@ const Leaderboard = () => {
                   <Text style={styles.tableHeaderText}>Rank</Text>
                   <Text style={styles.tableHeaderText}>Username</Text>
                   <Text style={styles.tableHeaderText}>Score</Text>
+                  <Text style={styles.tableHeaderText}>Date</Text> 
                 </View>
                 {leaderboardData.map((item, index) => (
                   <View key={index} style={styles.tableRow}>
                     <Text style={styles.tableCell}>{index + 1}</Text>
                     <Text style={styles.tableCell}>{item.username}</Text>
                     <Text style={styles.tableCell}>{item.score}</Text>
+                    <Text style={styles.tableCell}>{formatDate(item.game_date)}</Text>
                   </View>
                 ))}
               </View>
@@ -111,7 +120,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   leaderboardContainer: {
-    width: '90%',
+    width: '95%',
     justifyContent: 'center',
     alignItems: 'center',
   },
